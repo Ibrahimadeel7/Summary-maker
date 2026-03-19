@@ -271,6 +271,8 @@
 
   var depths = { short: 2, medium: 4, long: 6 };
 
+  var API_KEY = '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';
+
   function setLang(l) {
     lang = l;
     document.getElementById('btnEn').classList.toggle('on', l === 'en');
@@ -316,15 +318,14 @@
     var resp, data;
 
     try {
-      resp = await fetch('https://api.anthropic.com/v1/messages', {
+      resp = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-calls': 'true'
+          'Authorization': 'Bearer ' + API_KEY
         },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
+          model: 'anthropic/claude-sonnet-4-5',
           max_tokens: 500,
           messages: [{ role: 'user', content: prompt }]
         })
@@ -349,16 +350,16 @@
       var msg = 'Request failed';
       if (resp.status === 429) msg = 'Rate limited — give it a few seconds.';
       else if (resp.status === 401) msg = 'Auth error. Check your API key.';
-      else if (resp.status >= 500) msg = 'Server hiccup, try again shortly.';
+      else if (resp.status >= 500) msg = 'Server error, try again shortly.';
       else if (data && data.error && data.error.message) msg = data.error.message;
       out.innerHTML = '<p class="hint">&#9888; ' + msg + '</p>';
       _busy = false; btn.disabled = false; btn.textContent = 'Summarize →';
       return;
     }
 
-    var result = data.content && data.content[0] && data.content[0].text;
+    var result = data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
     if (!result) {
-      out.innerHTML = '<p class="hint">&#9888; Empty response, just try again.</p>';
+      out.innerHTML = '<p class="hint">&#9888; Empty response. Try again.</p>';
       _busy = false; btn.disabled = false; btn.textContent = 'Summarize →';
       return;
     }
